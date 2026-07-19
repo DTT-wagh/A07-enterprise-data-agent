@@ -1,0 +1,101 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "a07-backend"
+version = "0.1.0"
+description = "A07 Enterprise Data Agent Backend (FastAPI + LangChain)"
+readme = "backend/README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [
+    { name = "A07 Team" },
+]
+packages = ["app"]
+package_dir = { "" = "backend" }
+
+# ===== 核心依赖 =====
+dependencies = [
+    # Web 框架
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.34.0",
+    "python-multipart==0.0.20",          # 文件上传
+
+    # 配置 + 校验
+    "pydantic==2.10.4",
+    "pydantic-settings==2.7.1",
+    "python-dotenv==1.0.1",
+
+    # 数据库
+    "sqlalchemy==2.0.36",
+    "psycopg[binary]==3.2.3",            # PG 3.x 跨平台
+    "alembic==1.14.0",                   # 数据库迁移
+    "sqlparse==0.5.3",                   # SQL 解析（用于只读校验）
+
+    # LangChain Agent
+    "langchain==0.3.21",
+    "langchain-community==0.3.20",
+    "langchain-openai==0.2.13",
+    "langchain-core==0.3.49",
+
+    # ML
+    "scikit-learn==1.6.1",
+    "pandas==2.2.3",
+    "polars==1.20.0",                    # 高性能 DataFrame
+    "joblib==1.4.2",                     # 模型持久化
+    "shap==0.46.0",                      # 模型可解释性
+
+    # HTTP + 工具
+    "httpx==0.28.1",                     # LLM API
+    "tenacity==9.0.0",                   # 重试
+    "orjson==3.10.12",                   # 更快 JSON
+
+    # 可观测性
+    "structlog==24.4.0",
+    "rich==13.9.4",                      # 漂亮日志
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.4",
+    "pytest-asyncio==0.25.0",
+    "pytest-cov==6.0.0",
+    "ruff==0.8.4",
+    "mypy==1.13.0",
+    "types-requests",
+    "faker==33.1.0",                     # 样例数据生成
+]
+
+[project.scripts]
+a07-backend = "app.main:run"
+
+# ===== 工具配置 =====
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [".venv", "alembic/versions", "frontend", "scripts", "docs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM", "RUF"]
+ignore = [
+    "E501",   # 行长（mypy + formatter 会管）
+    "B008",   # FastAPI Depends 默认
+    "RUF012", # mutable class attributes
+]
+
+[tool.ruff.lint.per-file-ignores]
+"backend/tests/**/*.py" = ["S101"]  # 允许 assert
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true
+mypy_path = "backend"
+exclude = ["alembic/", ".venv/", "frontend/", "docs/", "scripts/"]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+addopts = "-ra --strict-markers"
+asyncio_mode = "auto"
